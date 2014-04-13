@@ -1,0 +1,110 @@
+<project name="build">
+	<!-- commenting here -->
+	<echo message="Hello Emre!"/>
+	<echo> This is longer than one line so this is better to echo something 
+		longer than one line... Your Build is starting... </echo>
+	
+	<!-- define common driectories, filesnames, etc -->
+	<property name="bin_dir" value ="./bin" />
+	<property name="src_dir" value ="./src" />
+	<property name="lib_dir" value ="./lib" />
+	<property name="test_reports_dir" value ="./reports" />
+	<property name="doc_dir" value ="./docs" />
+	<property name="client_classname" value="com.virtualpairprogrammers.client.SpringClient" />
+	<path id="compiler_path">
+		<!-- <pathelement location="${lib_dir}/junit.jar" /> -->
+		<!-- FileSet -->
+		<fileset dir="${lib_dir}">
+			<include name="*.jar" />
+			<exclude name="*.txt" />
+		</fileset>
+	</path>
+	<path id="runtime_path">
+		<path refid="compiler_path"/>
+		<pathelement location="${bin_dir}"/>
+	</path>
+	
+	<!-- Delete bin directory -->
+	<!-- Don't hard code directories instead of it, please use property
+		<delete dir="./bin" />
+	As shown below... -->
+	<delete dir="${bin_dir}" />
+	<delete dir="${test_reports_dir}" />
+	<delete dir="${doc_dir}" />
+	
+	<!-- Re-create the bin directory -->
+	<mkdir dir="${bin_dir}" />
+	<mkdir dir="${test_reports_dir}" />
+	<mkdir dir="${doc_dir}"/>
+	
+	<!-- Compile all the Java Files -->
+	<javac srcdir="${src_dir}" destdir="${bin_dir}" includeantruntime="false" debug="true">
+		<classpath refid="compiler_path"/>
+	</javac>
+	
+	<!-- Run the all of the JUnit Tests -->
+	<junit printsummary="on" failureproperty="junit.failure">
+		<classpath refid="runtime_path"/>
+		
+		<formatter type="xml"/>
+		<!-- Run Single Test Case -->
+		<!--
+		<test name="com.virtualpairprogrammers.domain.BookTest"/>
+		-->
+		<!-- Run all the Test Cases -->
+		<batchtest todir="${test_reports_dir}">
+			<formatter type="xml"/>
+			
+			<fileset dir="${src_dir}">
+				<include name="**/*Test*"/>
+			</fileset>
+		</batchtest>
+	</junit>
+	
+	<!-- Generate JUnit Report -->
+	<junitreport todir="${test_reports_dir}">
+		<fileset dir="."/>
+		<report todir="${test_reports_dir}"/>
+	</junitreport>
+	
+	<!-- Fail the Build if the any JUnit test case fails! -->
+	<fail if="junit.failure" message="Failed Test Case(s)!"/>
+	
+	<!-- Genrate JAVAdocs -->
+	<javadoc destdir="${doc_dir}">
+		<packageset dir="${src_dir}">
+			<include name="com/**/"/>
+		</packageset>
+	</javadoc>
+	
+	<!-- Copy application.xml and log4jproperties to bin directorym and then run program -->
+	<!-- I way. Coping files
+	<copy file="${src_dir}/application.xml" todir="${bin_dir}" />
+	<copy file="${src_dir}/log4j.properties" todir="${bin_dir}" />
+	 -->
+	<!-- II way. Coping files: Search and find then copy them
+	<copy todir="${bin_dir}">
+		<fileset dir="${src_dir}">
+		    <include name="**/*.xml"/>
+		    <include name="**/*.properties"/>
+		</fileset>
+	</copy>
+	 -->
+	<!-- III way. Coping files: Best way -->
+	<copy todir="${bin_dir}">
+		<fileset dir="${src_dir}">
+			<!-- Include evrything below line since we include everything we dont't need it 
+			Default ant will include everything...
+		    <include name="**/*.*"/>
+		     -->
+		    <exclude name="**/*.java"/>
+			<!-- Copied everything except java files -->
+		</fileset>
+	</copy>
+	
+	<java classname="${client_classname}">
+		<classpath refid="runtime_path"/>
+	</java>
+	
+	<echo message="End of Build!"/>
+</project>

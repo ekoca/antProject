@@ -1,0 +1,115 @@
+<project name="build" default="deploy">
+	
+		<!-- TASK 1: Define common driectories, filesnames, etc -->
+		<property name="bin_dir" value ="./bin" />
+		<property name="src_dir" value ="./src" />
+		<property name="lib_dir" value ="./lib" />
+		<property name="test_reports_dir" value ="./reports" />
+		<property name="doc_dir" value ="./docs" />
+		<property name="client_classname" value="com.virtualpairprogrammers.client.SpringClient" />
+		<property name="dist_dir" value ="./dist" />
+		<property name="warfile" value ="mywebapp" />
+		<property name="html_dir" value ="./web" />
+		<property name="webinf_dir" value ="./WEB-INF" />
+		<property name="tomcat_dir" value ="/Users/ekoca/apps/tomcat7/webapps"/>
+		<path id="compiler_path">
+			<fileset dir="${lib_dir}">
+				<include name="*.jar" />
+				<exclude name="*.txt" />
+			</fileset>
+		</path>
+		<path id="runtime_path">
+			<path refid="compiler_path"/>
+			<pathelement location="${bin_dir}"/>
+		</path>
+		
+	<target name="clean">
+		<!-- TASK 2: Delete bin directory -->
+		<delete dir="${bin_dir}"/>
+		<delete dir="${test_reports_dir}"/>
+		<delete dir="${doc_dir}"/>
+		<delete dir="${dist_dir}"/>
+		
+		<!-- TASK 3: Re-create the bin directory -->
+		<mkdir dir="${bin_dir}" />
+		<mkdir dir="${test_reports_dir}" />
+		<mkdir dir="${doc_dir}"/>
+		<mkdir dir="${dist_dir}"/>
+	</target>
+	
+	<target name="compile" depends="clean">
+		<!-- TASK 4: Compile all the Java Files -->
+		<javac srcdir="${src_dir}" destdir="${bin_dir}" includeantruntime="false" debug="true">
+			<classpath refid="compiler_path"/>
+		</javac>
+	</target>
+	
+	<target name="test" depends="compile">
+		<!-- TASK 5: Run the all of the JUnit Tests -->
+		<junit printsummary="on" failureproperty="junit.failure">
+			<classpath refid="runtime_path"/>
+			<formatter type="xml"/>
+			<batchtest todir="${test_reports_dir}">
+				<formatter type="xml"/>
+				
+				<fileset dir="${src_dir}">
+					<include name="**/*Test*"/>
+				</fileset>
+			</batchtest>
+		</junit>
+		
+		<!-- Generate JUnit Report -->
+		<junitreport todir="${test_reports_dir}">
+			<fileset dir="."/>
+			<report todir="${test_reports_dir}"/>
+		</junitreport>
+		
+		<!-- Fail the Build if the any JUnit test case fails! -->
+		<fail if="junit.failure" message="Failed Test Case(s)!"/>
+	</target>
+	
+	<target name="docs">
+		<!-- TASK 6: Genrate JAVAdocs -->
+		<javadoc destdir="${doc_dir}">
+			<packageset dir="${src_dir}">
+				<include name="com/**/"/>
+			</packageset>
+		</javadoc>
+	</target>
+	
+	<target name="run" depends="docs,test">
+		<!-- TASK 7: Copy application.xml and log4jproperties to bin directorym and then run program -->
+		<copy todir="${bin_dir}">
+			<fileset dir="${src_dir}">
+			    <exclude name="**/*.java"/>
+			</fileset>
+		</copy>
+		
+		<java classname="${client_classname}">
+			<classpath refid="runtime_path"/>
+		</java>
+	</target>
+
+    <target name="deploy" depends="compile">
+    	<war warfile="${dist_dir}/${warfile}.war" webxml="web.xml">
+    		<fileset dir="${html_dir}"/>
+    		<lib dir="${lib_dir}">
+    			<exclude name="servlet-api.jar"/>
+    		</lib>
+    		<classes dir="${bin_dir}"/>
+    		<classes dir="${webinf_dir}">
+    			<include name="**/*.properties"/>
+    		</classes>
+    		<webinf dir="${webinf_dir}">
+    			<exclude name="**/*.properties"/>
+    		</webinf>
+    		<webinf dir="${src_dir}">
+    			<include name="**/*.xml"/>
+    			<include name="**/*.properties"/>
+    		</webinf>
+    	</war>
+    	
+    	<copy file="${dist_dir}/${warfile}.war" todir="${tomcat_dir}"/>
+    </target>
+
+</project>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flow xmlns="http://www.springframework.org/schema/webflow"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.springframework.org/schema/webflow
+                          http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd"
+                          
+                          
+          start-state="enterCustomerId">
+
+
+	<var name="order" class="com.virtualpairprogrammers.domain.Order"/>
+	
+	<on-start>
+		<evaluate expression="order.setBooksOrdered(shoppingCart.allItems)"/>
+	</on-start>
+		
+	<view-state id="enterCustomerId" view="/enterCustomerId.jsp">
+			<transition on="findCustomer" to="lookUpCustomer"/>		
+			<transition on="newCustomer" to="newCustomer"/>			
+	</view-state>
+	
+	<view-state id="newCustomer" view="/newCustomer.jsp" model="order">
+		<transition on="addCustomer" to="showOrder"/>
+	</view-state>
+	
+	<action-state id="lookUpCustomer">
+		<evaluate expression="accountsService.findCustomer(requestParameters.accountId)"
+		          result="requestScope.customer" />
+		
+		<transition on="success" to="showOrder">
+			<evaluate expression="order.setCustomer(customer)"/>
+		</transition>
+		
+		<transition on-exception="com.virtualpairprogrammers.services.CustomerNotFoundException"
+		            to="enterCustomerId">
+		            
+			<set name="flashScope.errorMessage" value="resourceBundle.customerNotFoundMessage"/>		            
+		            
+		</transition>
+		           		            		
+	</action-state>
+	
+	<view-state id="showOrder" view="/showOrder.jsp">
+		<transition on="removeBook" to="removeBook"/>
+		<transition on="nextStep" to="confirmOrder" />
+	</view-state>
+	
+	<action-state id="removeBook">
+		<evaluate expression="order.removeItem(requestParameters.id)"/>
+		
+		<transition to="showOrder"/>		
+	</action-state>
+	
+	<view-state id="confirmOrder" view="/confirmOrder.jsp">
+		<transition on="confirm" to="finished"/>
+	</view-state>
+	
+	<end-state id="finished" view="/orderRaised.jsp"/>
+	
+	<on-end>		
+		<evaluate expression="shoppingCart.clear()"/>
+	</on-end>
+
+
+</flow>
+		
